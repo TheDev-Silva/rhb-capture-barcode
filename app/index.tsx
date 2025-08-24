@@ -1,0 +1,117 @@
+import React, { useEffect, useRef } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Animated,
+  Dimensions,
+  Image,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+const { height } = Dimensions.get("window");
+
+export default function HomeScreen() {
+  const router = useRouter();
+
+  const translateY = useRef(new Animated.Value(height)).current; // começa fora da tela
+
+  useEffect(() => {
+    Animated.timing(translateY, {
+      toValue: height * 0.33, // sobe até 30% da tela (ou seja, ocupa 70%)
+      duration: 1000,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+
+
+      <Image
+        source={require('../assets/logo1.png')}
+        style={{ objectFit: 'contain', width: 200, marginTop: 40 }}
+
+      />
+      <Animated.View
+        style={[
+          styles.animatedContainer,
+          {
+            transform: [{ translateY }],
+          },
+        ]}
+      >
+        <Text style={styles.title}>RHB Capture Barcode</Text>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push("/capture")}
+        >
+          <Text style={styles.buttonText}>código de barras</Text>
+          <Text style={styles.buttonText}>coletar número de série</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push("/search")}
+        >
+          <Text style={styles.buttonText}>Buscar por...</Text>
+          <Text style={styles.buttonText}>barcode / nome / pedido</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push("/history")}
+        >
+          <Text style={styles.buttonText}>Histórico</Text>
+        </TouchableOpacity>
+      </Animated.View>
+
+    </SafeAreaView>
+  );
+}
+const styles = StyleSheet.create({
+ 
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#fff",
+    alignItems: "center",
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 50,
+    marginTop: 20,
+    color: '#fff'
+  },
+  animatedContainer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: height * 0.7,
+    backgroundColor: "#0036a0",
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    padding: 20,
+    alignItems: "center",
+
+  },
+  button: {
+    backgroundColor: "#fff",
+    height: 80,
+    borderRadius: 50,
+    marginVertical: 10,
+    width: "90%",
+    alignItems: "center",
+    justifyContent: 'center'
+  },
+  buttonText: {
+    width: '100%',
+    textAlign: 'center',
+    color: "#000",
+    textTransform: 'uppercase',
+    fontSize: 18,
+    fontWeight: "600",
+  },
+});
