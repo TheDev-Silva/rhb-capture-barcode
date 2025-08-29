@@ -1,6 +1,16 @@
 import { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from "react-native";
+import {
+   View,
+   Text,
+   StyleSheet,
+   TextInput,
+   TouchableOpacity,
+   Alert,
+   Image,
+   ScrollView,
+} from "react-native";
 import { Camera, CameraView } from "expo-camera";
+import * as ImagePicker from "expo-image-picker";
 import "react-native-get-random-values";
 import { useRouter } from "expo-router";
 import { v4 as uuidv4 } from "uuid";
@@ -13,7 +23,8 @@ export default function CaptureScreen() {
    const [scannedCodes, setScannedCodes] = useState<string[]>([]);
    const [nome, setNome] = useState("");
    const [numeroPedido, setNumeroPedido] = useState("");
-   const [scanned, setScanned] = useState(false);
+   const [image, setImage] = useState<string>("");
+   const [scanning, setScanning] = useState(false);
 
    const { adicionarPedido } = useAppContext();
    const router = useRouter();
@@ -25,13 +36,28 @@ export default function CaptureScreen() {
       })();
    }, []);
 
-   const handleBarCodeScanned = ({ data }: { data: string }) => {
-      if (!scannedCodes.includes(data)) {
-         setScannedCodes((prev) => [...prev, data]);
+   // 📸 Selecionar ou tirar foto do pedido
+   const pickImage = async () => {
+      const result = await ImagePicker.launchCameraAsync({
+         allowsEditing: true,
+         quality: 0.7,
+      });
+
+      if (!result.canceled) {
+         setImage(result.assets[0].uri);
       }
-      setScanned(true);
    };
 
+   // 📡 Escanear código de barras
+   const handleBarCodeScanned = ({ data }: { data: string }) => {
+      if (scannedCodes.includes(data)) {
+         Alert.alert("Atenção", `O código ${data} já foi escaneado.`);
+         return;
+      }
+      setScannedCodes((prev) => [...prev, data]);
+   };
+
+   // 💾 Salvar Pedido
    const salvarPedido = () => {
       if (!nome || !numeroPedido || scannedCodes.length === 0) {
          Alert.alert("Preencha todos os campos antes de salvar.");
@@ -41,6 +67,7 @@ export default function CaptureScreen() {
       const novoPedido = {
          id: uuidv4(),
          numero: numeroPedido,
+         image,
          nome,
          codigos: scannedCodes,
          criadoEm: new Date().toISOString(),
@@ -60,25 +87,43 @@ export default function CaptureScreen() {
 
    return (
       <SafeAreaView style={styles.safeArea}>
-         <View style={styles.container}>
-            <View style={styles.scannerBox}>
-               <CameraView
-                  style={StyleSheet.absoluteFillObject}
-                  facing="back"
-                  barcodeScannerSettings={{
-                     barcodeTypes: ["qr", "ean13", "ean8", "code128"], // pode adicionar mais se precisar
-                  }}
-                  onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-               />
+         <ScrollView contentContainerStyle={styles.container}>
+            {/* Foto do pedido */}
+            <View style={styles.imageBox}>
+               {image ? (
+                  <Image source={{ uri: image }} style={styles.image} />
+               ) : (
+                  <Text style={{ color: "#999" }}>Nenhuma foto selecionada</Text>
+               )}
             </View>
-
-            <TouchableOpacity
-               style={styles.rescanButton}
-               onPress={() => setScanned(false)}
-            >
-               <Text style={styles.rescanText}>Escanear Novamente</Text>
+            <TouchableOpacity style={styles.uploadBtn} onPress={pickImage}>
+               <Text style={styles.uploadText}>Upload Image</Text>
             </TouchableOpacity>
 
+            {/* Scanner */}
+            {scanning && (
+               <View style={styles.scannerBox}>
+                  <CameraView
+                     style={StyleSheet.absoluteFillObject}
+                     facing="back"
+                     barcodeScannerSettings={{
+                        barcodeTypes: ["qr", "ean13", "ean8", "code128"],
+                     }}
+                     onBarcodeScanned={handleBarCodeScanned}
+                  />
+               </View>
+            )}
+
+            <TouchableOpacity
+               style={styles.scanButton}
+               onPress={() => setScanning((prev) => !prev)}
+            >
+               <Text style={styles.buttonText}>
+                  {scanning ? "Parar Scanner" : "Coletar Código de Barra"}
+               </Text>
+            </TouchableOpacity>
+
+            {/* Inputs */}
             <TextInput
                style={styles.input}
                placeholder="Nome de quem fez"
@@ -92,55 +137,101 @@ export default function CaptureScreen() {
                onChangeText={setNumeroPedido}
             />
 
-            {/* Exibir lista de códigos */}
-            <BarcodeList codigos={scannedCodes} />
+            {/* Lista de códigos */}
+            <BarcodeList
+               image={image}
+               codigos={scannedCodes}
+               removerCodigo={(codigo) =>
+                  setScannedCodes((prev) => prev.filter((c) => c !== codigo))
+               }
+            />
 
-            <TouchableOpacity style={styles.button} onPress={salvarPedido}>
-               <Text style={styles.buttonText}>Salvar Pedido</Text>
-            </TouchableOpacity>
-         </View>
+            {/* Botões de ação */}
+            <View style={styles.buttonsRow}>
+               <TouchableOpacity
+                  style={[styles.actionBtn, { backgroundColor: "#d9534f" }]}
+                  onPress={() => router.back()}
+               >
+                  <Text style={styles.buttonText}>Cancelar</Text>
+               </TouchableOpacity>
+
+               <TouchableOpacity style={styles.actionBtn} onPress={salvarPedido}>
+                  <Text style={styles.buttonText}>Finalizar e Salvar</Text>
+               </TouchableOpacity>
+            </View>
+         </ScrollView>
       </SafeAreaView>
    );
 }
 
 const styles = StyleSheet.create({
-   container: { flex: 1, padding: 16, backgroundColor: "#fff", width: '100%', },
    safeArea: {
       flex: 1,
-      backgroundColor: "#fff",
+      backgroundColor: "#f5f5f5",
+   },
+   container: {
+      padding: 16,
       alignItems: "center",
    },
+   imageBox: {
+      width: "100%",
+      height: 150,
+      borderWidth: 1,
+      borderColor: "#ccc",
+      marginBottom: 12,
+      justifyContent: "center",
+      alignItems: "center",
+      borderRadius: 8,
+      overflow: "hidden",
+      backgroundColor: "#eee",
+   },
+   image: { width: "100%", height: "100%", resizeMode: "cover" },
+   uploadBtn: {
+      backgroundColor: "#0057D9",
+      padding: 10,
+      borderRadius: 20,
+      marginBottom: 16,
+   },
+   uploadText: { color: "#fff", fontWeight: "bold" },
    scannerBox: {
+      width: "100%",
       height: 200,
       marginBottom: 16,
       borderWidth: 2,
-      borderColor: "#0057D9"
+      borderColor: "#0057D9",
+      borderRadius: 8,
+      overflow: "hidden",
    },
-   rescanButton: {
+   scanButton: {
+      backgroundColor: "#0057D9",
+      padding: 14,
+      borderRadius: 8,
+      alignItems: "center",
       marginBottom: 12,
-      alignItems: "center"
-   },
-   rescanText: {
-      color: "#0057D9",
-      fontWeight: "600"
+      width: "100%",
    },
    input: {
       borderWidth: 1,
       borderColor: "#ccc",
       padding: 12,
       borderRadius: 8,
-      marginBottom: 12
+      marginBottom: 12,
+      width: "100%",
+      backgroundColor: "#fff",
    },
-   button: {
+   buttonsRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginTop: 16,
+      width: "100%",
+   },
+   actionBtn: {
+      flex: 1,
       backgroundColor: "#0057D9",
-      padding: 16,
+      padding: 14,
       borderRadius: 8,
       alignItems: "center",
-      marginTop: 12
+      marginHorizontal: 4,
    },
-   buttonText: {
-      color: "#fff",
-      fontSize: 16,
-      fontWeight: "600"
-   },
+   buttonText: { color: "#fff", fontWeight: "600" },
 });
