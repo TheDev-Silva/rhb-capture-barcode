@@ -15,7 +15,7 @@ interface AppContextProps {
   buscarPedido: (id: string) => Pedido | undefined;
 }
 
-const STORAGE_KEY = "@rhb_pedidos";
+const STORAGE_KEY = "@barcode_pedidos";
 
 const AppContext = createContext<AppContextProps | undefined>(undefined);
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
    View,
    Text,
@@ -6,28 +6,36 @@ import {
    TextInput,
    TouchableOpacity,
    Alert,
-   Image,
+   Animated,
+   Dimensions,
    ScrollView,
 } from "react-native";
 import { Camera, CameraView } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
-import "react-native-get-random-values";
 import { useRouter } from "expo-router";
-import { v4 as uuidv4 } from "uuid";
 import { useAppContext } from "../src/context/AppContext";
 import { BarcodeList } from "../src/components/BarcodeList";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Audio } from "expo-av";
+import { CodeBlock } from "../src/types";
+
+const { height } = Dimensions.get("window");
+
+const generateId = () => Math.random().toString(36).substring(2, 10);
 
 export default function CaptureScreen() {
    const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+   const [codeBlocks, setCodeBlocks] = useState<CodeBlock[]>([]);
    const [scannedCodes, setScannedCodes] = useState<string[]>([]);
    const [nome, setNome] = useState("");
    const [numeroPedido, setNumeroPedido] = useState("");
    const [image, setImage] = useState<string>("");
+   const [photoTimestamp, setPhotoTimestamp] = useState<string>("");
    const [scanning, setScanning] = useState(false);
-
    const { adicionarPedido } = useAppContext();
    const router = useRouter();
+
+   const translateY = useRef(new Animated.Value(height)).current;
 
    useEffect(() => {
       (async () => {
@@ -36,202 +44,220 @@ export default function CaptureScreen() {
       })();
    }, []);
 
-   // 📸 Selecionar ou tirar foto do pedido
+   useEffect(() => {
+      if (image) {
+         Animated.timing(translateY, {
+            toValue: 0,
+            duration: 400,
+            useNativeDriver: true,
+         }).start();
+      }
+   }, [image]);
+
+   const playScanSound = async () => {
+      try {
+         const { sound } = await Audio.Sound.createAsync(require("./assets/beep-07a.mp3"));
+         await sound.playAsync();
+         sound.setOnPlaybackStatusUpdate((status) => {
+            if (status.isLoaded && status.didJustFinish) sound.unloadAsync();
+         });
+      } catch (error) {
+         console.log("Erro ao tocar som", error);
+      }
+   };
+
    const pickImage = async () => {
       const result = await ImagePicker.launchCameraAsync({
+         mediaTypes: ['images', 'videos'],
+         aspect: [4, 3],
          allowsEditing: true,
-         quality: 0.7,
-      });
+         quality: 0.7
 
+      });
+      console.log(result);
       if (!result.canceled) {
          setImage(result.assets[0].uri);
+         setPhotoTimestamp(new Date().toISOString());
       }
    };
 
-   // 📡 Escanear código de barras
    const handleBarCodeScanned = ({ data }: { data: string }) => {
-      if (scannedCodes.includes(data)) {
-         Alert.alert("Atenção", `O código ${data} já foi escaneado.`);
-         return;
+      if (!scannedCodes.includes(data)) {
+         setScannedCodes((prev) => [...prev, data]);
+         playScanSound();
       }
-      setScannedCodes((prev) => [...prev, data]);
    };
 
-   // 💾 Salvar Pedido
+   const finalizarBloco = () => {
+      if (scannedCodes.length > 0) {
+         const timestamp = new Date().toISOString();
+         setCodeBlocks((prev) => [...prev, { timestamp, codes: scannedCodes }]);
+         setScannedCodes([]);
+      }
+   };
+
+   const removerCodigo = (timestamp: string, codigo: string) => {
+      setCodeBlocks((prev) =>
+         prev.map((block) =>
+            block.timestamp === timestamp
+               ? { ...block, codes: block.codes.filter((c) => c !== codigo) }
+               : block
+         )
+      );
+   };
+
    const salvarPedido = () => {
-      if (!nome || !numeroPedido || scannedCodes.length === 0) {
-         Alert.alert("Preencha todos os campos antes de salvar.");
-         return;
+      if (scannedCodes.length > 0) {
+         // cria o último bloco localmente
+         const timestamp = new Date().toISOString();
+         const ultimoBloco = { timestamp, codes: scannedCodes };
+         const todosBlocos = [...codeBlocks, ultimoBloco];
+
+         if (!nome || !numeroPedido || todosBlocos.length === 0) {
+            Alert.alert("Preencha todos os campos antes de salvar.");
+            return;
+         }
+
+         const novoPedido = {
+            id: generateId(),
+            numero: numeroPedido,
+            image,
+            nome,
+            codeBlocks: todosBlocos,
+            criadoEm: new Date().toISOString(),
+         };
+
+         adicionarPedido(novoPedido as any);
+         Alert.alert("Sucesso", "Pedido salvo com sucesso!");
+         router.push("/history");
+
+         // limpa estados
+         setScannedCodes([]);
+         setCodeBlocks([]);
+         setImage("");
+         setPhotoTimestamp("");
+      } else {
+         if (!nome || !numeroPedido || codeBlocks.length === 0) {
+            Alert.alert("Preencha todos os campos antes de salvar.");
+            return;
+         }
+         // se não houver códigos novos, salvar normalmente
+         const novoPedido = {
+            id: generateId(),
+            numero: numeroPedido,
+            image,
+            nome,
+            codeBlocks,
+            criadoEm: new Date().toISOString(),
+         };
+         adicionarPedido(novoPedido as any);
+         Alert.alert("Sucesso", "Pedido salvo com sucesso!");
+         router.push("/history");
+
+         // limpa estados
+         setScannedCodes([]);
+         setCodeBlocks([]);
+         setImage("");
+         setPhotoTimestamp("");
       }
-
-      const novoPedido = {
-         id: uuidv4(),
-         numero: numeroPedido,
-         image,
-         nome,
-         codigos: scannedCodes,
-         criadoEm: new Date().toISOString(),
-      };
-
-      adicionarPedido(novoPedido);
-      Alert.alert("Sucesso", "Pedido salvo com sucesso!");
-      router.push("/history");
    };
 
-   if (hasPermission === null) {
-      return <Text>Solicitando permissão da câmera...</Text>;
-   }
-   if (hasPermission === false) {
-      return <Text>Permissão negada para usar a câmera.</Text>;
-   }
+
+   if (hasPermission === null) return <Text>Solicitando permissão da câmera...</Text>;
+   if (hasPermission === false) return <Text>Permissão negada para usar a câmera.</Text>;
 
    return (
       <SafeAreaView style={styles.safeArea}>
-         <ScrollView contentContainerStyle={styles.container}>
-            {/* Foto do pedido */}
-            <View style={styles.imageBox}>
-               {image ? (
-                  <Image source={{ uri: image }} style={styles.image} />
-               ) : (
-                  <Text style={{ color: "#999" }}>Nenhuma foto selecionada</Text>
-               )}
-            </View>
-            <TouchableOpacity style={styles.uploadBtn} onPress={pickImage}>
-               <Text style={styles.uploadText}>Upload Image</Text>
-            </TouchableOpacity>
+         {!scanning ? (
+            <View style={styles.formArea}>
+               <TouchableOpacity style={styles.uploadBtn} onPress={pickImage}>
+                  <Text style={styles.uploadText}>{image ? "Refazer Foto" : "Tirar Foto"}</Text>
+               </TouchableOpacity>
 
-            {/* Scanner */}
-            {scanning && (
-               <View style={styles.scannerBox}>
-                  <CameraView
-                     style={StyleSheet.absoluteFillObject}
-                     facing="back"
-                     barcodeScannerSettings={{
-                        barcodeTypes: ["qr", "ean13", "ean8", "code128"],
-                     }}
-                     onBarcodeScanned={handleBarCodeScanned}
-                  />
-               </View>
-            )}
-
-            <TouchableOpacity
-               style={styles.scanButton}
-               onPress={() => setScanning((prev) => !prev)}
-            >
-               <Text style={styles.buttonText}>
-                  {scanning ? "Parar Scanner" : "Coletar Código de Barra"}
-               </Text>
-            </TouchableOpacity>
-
-            {/* Inputs */}
-            <TextInput
-               style={styles.input}
-               placeholder="Nome de quem fez"
-               value={nome}
-               onChangeText={setNome}
-            />
-            <TextInput
-               style={styles.input}
-               placeholder="Número do pedido"
-               value={numeroPedido}
-               onChangeText={setNumeroPedido}
-            />
-
-            {/* Lista de códigos */}
-            <BarcodeList
-               image={image}
-               codigos={scannedCodes}
-               removerCodigo={(codigo) =>
-                  setScannedCodes((prev) => prev.filter((c) => c !== codigo))
-               }
-            />
-
-            {/* Botões de ação */}
-            <View style={styles.buttonsRow}>
                <TouchableOpacity
-                  style={[styles.actionBtn, { backgroundColor: "#d9534f" }]}
-                  onPress={() => router.back()}
+                  style={[styles.uploadBtn, { opacity: !image ? 0.5 : 1 }]}
+                  onPress={() => {
+                     finalizarBloco(); // salva qualquer bloco antes de abrir scanner
+                     setScanning(true);
+                  }}
+                  disabled={!image}
                >
-                  <Text style={styles.buttonText}>Cancelar</Text>
+                  <Text style={styles.uploadText}>Coletar Código de Barra</Text>
                </TouchableOpacity>
 
-               <TouchableOpacity style={styles.actionBtn} onPress={salvarPedido}>
-                  <Text style={styles.buttonText}>Finalizar e Salvar</Text>
-               </TouchableOpacity>
+               <TextInput style={styles.input} placeholder="Nome de quem fez" value={nome} onChangeText={setNome} />
+               <TextInput style={styles.input} placeholder="Número do pedido" value={numeroPedido} onChangeText={setNumeroPedido} />
+
+               <Animated.View style={[styles.chatArea, { transform: [{ translateY }] }]}>
+                  <BarcodeList
+                     image={image}
+                     photoTimestamp={photoTimestamp}
+                     codeBlocks={codeBlocks}
+                     removerCodigo={removerCodigo}
+                  />
+
+                  <View style={styles.buttonsRow}>
+                     <TouchableOpacity style={[styles.actionBtn, { backgroundColor: "#d9534f" }]} onPress={() => router.back()}>
+                        <Text style={styles.buttonText}>Cancelar</Text>
+                     </TouchableOpacity>
+                     <TouchableOpacity style={styles.actionBtn} onPress={salvarPedido}>
+                        <Text style={styles.buttonText}>Finalizar e Salvar</Text>
+                     </TouchableOpacity>
+                  </View>
+               </Animated.View>
             </View>
-         </ScrollView>
+         ) : (
+            <View style={styles.fullScreenCamera}>
+               <CameraView
+                  style={StyleSheet.absoluteFillObject}
+                  barcodeScannerSettings={{ barcodeTypes: ["ean13", "ean8", "code128"] }}
+                  onBarcodeScanned={handleBarCodeScanned}
+               />
+
+               <ScrollView style={styles.overlayCodes}>
+                  {codeBlocks.map((block) => (
+                     <View key={block.timestamp} style={{ marginBottom: 6 }}>
+                        <Text style={styles.timestamp}>{new Date(block.timestamp).toLocaleTimeString()}</Text>
+                        {block.codes.map((c) => (
+                           <Text key={c} style={styles.codeText}>{c}</Text>
+                        ))}
+                     </View>
+                  ))}
+                  {scannedCodes.map((c) => (
+                     <Text key={c} style={styles.codeText}>{c}</Text>
+                  ))}
+               </ScrollView>
+
+               <View style={{ width: "100%", alignItems: "center" }}>
+                  <TouchableOpacity
+                     style={styles.stopScannerBtn}
+                     onPress={() => {
+                        finalizarBloco();
+                        setScanning(false);
+                     }}
+                  >
+                     <Text style={styles.buttonText}>Parar Scanner</Text>
+                  </TouchableOpacity>
+               </View>
+            </View>
+         )}
       </SafeAreaView>
    );
 }
 
 const styles = StyleSheet.create({
-   safeArea: {
-      flex: 1,
-      backgroundColor: "#f5f5f5",
-   },
-   container: {
-      padding: 16,
-      alignItems: "center",
-   },
-   imageBox: {
-      width: "100%",
-      height: 150,
-      borderWidth: 1,
-      borderColor: "#ccc",
-      marginBottom: 12,
-      justifyContent: "center",
-      alignItems: "center",
-      borderRadius: 8,
-      overflow: "hidden",
-      backgroundColor: "#eee",
-   },
-   image: { width: "100%", height: "100%", resizeMode: "cover" },
-   uploadBtn: {
-      backgroundColor: "#0057D9",
-      padding: 10,
-      borderRadius: 20,
-      marginBottom: 16,
-   },
-   uploadText: { color: "#fff", fontWeight: "bold" },
-   scannerBox: {
-      width: "100%",
-      height: 200,
-      marginBottom: 16,
-      borderWidth: 2,
-      borderColor: "#0057D9",
-      borderRadius: 8,
-      overflow: "hidden",
-   },
-   scanButton: {
-      backgroundColor: "#0057D9",
-      padding: 14,
-      borderRadius: 8,
-      alignItems: "center",
-      marginBottom: 12,
-      width: "100%",
-   },
-   input: {
-      borderWidth: 1,
-      borderColor: "#ccc",
-      padding: 12,
-      borderRadius: 8,
-      marginBottom: 12,
-      width: "100%",
-      backgroundColor: "#fff",
-   },
-   buttonsRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      marginTop: 16,
-      width: "100%",
-   },
-   actionBtn: {
-      flex: 1,
-      backgroundColor: "#0057D9",
-      padding: 14,
-      borderRadius: 8,
-      alignItems: "center",
-      marginHorizontal: 4,
-   },
+   safeArea: { flex: 1, backgroundColor: "#f5f5f5" },
+   formArea: { flex: 1, padding: 16 },
+   uploadBtn: { width: "100%", backgroundColor: "#0057D9", padding: 16, borderRadius: 50, marginBottom: 16, alignItems: "center" },
+   uploadText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+   input: { borderWidth: 1, borderColor: "#ccc", padding: 12, borderRadius: 8, marginBottom: 12, backgroundColor: "#fff" },
+   chatArea: { position: "absolute", bottom: 10, left: 0, right: 0, height: "60%", backgroundColor: "#008bf699", padding: 12, borderTopLeftRadius: 16, borderTopRightRadius: 16, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 4 },
+   buttonsRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 16, width: "100%" },
+   actionBtn: { flex: 1, backgroundColor: "#0057D9", padding: 14, borderRadius: 8, alignItems: "center", marginHorizontal: 4 },
    buttonText: { color: "#fff", fontWeight: "600" },
+   fullScreenCamera: { ...StyleSheet.absoluteFillObject, justifyContent: "flex-end", alignItems: "center" },
+   overlayCodes: { position: "absolute", top: 50, left: 16, right: 16, maxHeight: 200, backgroundColor: "#00000088", padding: 8, borderRadius: 12 },
+   codeText: { color: "#fff", fontSize: 16 },
+   timestamp: { fontSize: 12, color: "#fff", marginBottom: 2 },
+   stopScannerBtn: { backgroundColor: "#d9534f", padding: 16, borderRadius: 50, marginBottom: 40, width: "80%", alignItems: "center" },
 });

@@ -17,23 +17,31 @@ export default function HomeScreen() {
   const router = useRouter();
 
   const translateY = useRef(new Animated.Value(height)).current; // começa fora da tela
+  console.log(translateY);
 
+  const opacidyValue = useRef(new Animated.Value(0)).current
   useEffect(() => {
     Animated.timing(translateY, {
       toValue: height * 0.33, // sobe até 30% da tela (ou seja, ocupa 70%)
       duration: 1000,
       useNativeDriver: true,
     }).start();
+    Animated.timing(opacidyValue, {
+      toValue: 1,
+      duration: 2000,
+      useNativeDriver: true
+    }).start()
   }, []);
+
 
   return (
     <SafeAreaView style={styles.safeArea}>
 
 
-      <Image
-        source={require('../assets/logo1.png')}
-        style={{ objectFit: 'contain', width: 200, marginTop: 40 }}
-
+      <Animated.Image
+        source={require('../assets/oficial.png')}
+        style={{ objectFit: 'contain', width: 200, marginTop: 120, opacity: opacidyValue }}
+        
       />
       <Animated.View
         style={[
@@ -43,13 +51,13 @@ export default function HomeScreen() {
           },
         ]}
       >
-        <Text style={styles.title}>RHB Capture Barcode</Text>
+        {/* <Text style={styles.title}>Capture Barcode</Text> */}
         <TouchableOpacity
           style={styles.button}
           onPress={() => router.push("/capture")}
         >
-          <Text style={styles.buttonText}>código de barras</Text>
-          <Text style={styles.buttonText}>coletar número de série</Text>
+          <Text style={styles.buttonText}>Coletar código</Text>
+          <Text style={[styles.buttonText, { fontSize: 14, fontWeight: '500', textTransform: 'none' }]}>(Serial Number)</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -72,7 +80,7 @@ export default function HomeScreen() {
   );
 }
 const styles = StyleSheet.create({
- 
+
   safeArea: {
     flex: 1,
     backgroundColor: "#fff",
@@ -87,9 +95,10 @@ const styles = StyleSheet.create({
   },
   animatedContainer: {
     position: "absolute",
+    top: 80,
     left: 0,
     right: 0,
-    height: height * 0.7,
+    height: height * 0.6,
     backgroundColor: "#0036a0",
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
@@ -99,19 +108,20 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: "#fff",
-    height: 80,
+    height: 70,
     borderRadius: 50,
-    marginVertical: 10,
-    width: "90%",
+    marginVertical: 20,
+    width: "100%",
     alignItems: "center",
-    justifyContent: 'center'
+    justifyContent: 'center',
+
   },
   buttonText: {
     width: '100%',
     textAlign: 'center',
     color: "#000",
     textTransform: 'uppercase',
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: "600",
   },
 });
