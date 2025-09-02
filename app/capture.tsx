@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import * as FileSystem from "expo-file-system";
 import {
    View,
    Text,
@@ -18,6 +19,7 @@ import { BarcodeList } from "../src/components/BarcodeList";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Audio } from "expo-av";
 import { CodeBlock } from "../src/types";
+
 
 const { height } = Dimensions.get("window");
 
@@ -39,7 +41,7 @@ export default function CaptureScreen() {
 
    useEffect(() => {
       (async () => {
-         const { status } = await Camera.requestCameraPermissionsAsync();
+         const { status } = await ImagePicker.requestCameraPermissionsAsync();
          setHasPermission(status === "granted");
       })();
    }, []);
@@ -56,7 +58,7 @@ export default function CaptureScreen() {
 
    const playScanSound = async () => {
       try {
-         const { sound } = await Audio.Sound.createAsync(require("./assets/beep-07a.mp3"));
+         const { sound } = await Audio.Sound.createAsync(require("../assets/beep-07a.mp3"));
          await sound.playAsync();
          sound.setOnPlaybackStatusUpdate((status) => {
             if (status.isLoaded && status.didJustFinish) sound.unloadAsync();
@@ -68,18 +70,37 @@ export default function CaptureScreen() {
 
    const pickImage = async () => {
       const result = await ImagePicker.launchCameraAsync({
-         mediaTypes: ['images', 'videos'],
-         aspect: [4, 3],
+         mediaTypes: 'images',
          allowsEditing: true,
-         quality: 0.7
-
+         aspect: [4, 3],
+         quality: 0.7,
       });
-      console.log(result);
+
       if (!result.canceled) {
-         setImage(result.assets[0].uri);
-         setPhotoTimestamp(new Date().toISOString());
+         const tempUri = result.assets[0].uri;
+         const fileName = tempUri.split('/').pop(); // Extrai o nome do arquivo
+
+         // Define o caminho permanente dentro do diretório de documentos do app
+         const permanentUri = `${FileSystem.documentDirectory}${fileName}`;
+
+         try {
+            // Move o arquivo do cache para o local permanente
+            await FileSystem.moveAsync({
+               from: tempUri,
+               to: permanentUri,
+            });
+
+            // Atualiza o estado com a nova URI permanente
+            setImage(permanentUri);
+            setPhotoTimestamp(new Date().toISOString());
+
+         } catch (error) {
+            console.error("Erro ao salvar a imagem:", error);
+            Alert.alert("Erro", "Não foi possível salvar a imagem. Tente novamente.");
+         }
       }
    };
+
 
    const handleBarCodeScanned = ({ data }: { data: string }) => {
       if (!scannedCodes.includes(data)) {
@@ -106,6 +127,7 @@ export default function CaptureScreen() {
       );
    };
 
+
    const salvarPedido = () => {
       if (scannedCodes.length > 0) {
          // cria o último bloco localmente
@@ -121,8 +143,8 @@ export default function CaptureScreen() {
          const novoPedido = {
             id: generateId(),
             numero: numeroPedido,
-            image,
-            nome,
+            image: image,
+            nome: nome,
             codeBlocks: todosBlocos,
             criadoEm: new Date().toISOString(),
          };
@@ -137,7 +159,7 @@ export default function CaptureScreen() {
          setImage("");
          setPhotoTimestamp("");
       } else {
-         if (!nome || !numeroPedido || codeBlocks.length === 0) {
+         if (!nome || !numeroPedido || !image || codeBlocks.length === 0) {
             Alert.alert("Preencha todos os campos antes de salvar.");
             return;
          }
@@ -145,8 +167,8 @@ export default function CaptureScreen() {
          const novoPedido = {
             id: generateId(),
             numero: numeroPedido,
-            image,
-            nome,
+            image: image,
+            nome: nome,
             codeBlocks,
             criadoEm: new Date().toISOString(),
          };

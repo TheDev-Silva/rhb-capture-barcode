@@ -36,7 +36,7 @@ export default function HistoryScreen() {
                   <Image
                      source={{ uri: item.image }}
                     style={styles.image}
-                    resizeMode="contain"
+                    resizeMode="cover"
                   />
                ) : <Text>Sem imagem a exibir</Text>}
                
@@ -76,8 +76,8 @@ const styles = StyleSheet.create({
    safeArea: { flex: 1, backgroundColor: "#fff", alignItems: "center" },
    container: { flex: 1, padding: 16, width: "100%" },
    image: {
-      width: 200,
-      height: 200,
+      width: '100%',
+      minHeight: 200,
       marginTop: 16,
       borderRadius: 10,
    },

@@ -40,7 +40,7 @@ export default function HomeScreen() {
 
       <Animated.Image
         source={require('../assets/oficial.png')}
-        style={{ objectFit: 'contain', width: 200, marginTop: 120, opacity: opacidyValue }}
+        style={{ objectFit: 'contain', width: 220, marginTop: 30, opacity: opacidyValue }}
         
       />
       <Animated.View
