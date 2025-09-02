@@ -3,14 +3,22 @@ import { useRouter } from "expo-router";
 import { useAppContext } from "../src/context/AppContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
+import { useState } from "react";
 
 
 
 export default function HistoryScreen() {
    const { pedidos, removerPedido } = useAppContext();
    const router = useRouter();
+   const [toggle, setToggle] = useState(false)
 
+   const handleToggle = () => {
 
+     
+         setToggle(!toggle)
+   
+
+   }
 
 
    const renderItem = ({ item }: any) => {
@@ -32,14 +40,22 @@ export default function HistoryScreen() {
 
                <Text style={styles.info}>Códigos</Text>
                <Text style={[styles.info, { fontSize: 18, color: '#000' }]}>[ {allCodes} ]</Text>
-               {item.image ? (
-                  <Image
-                     source={{ uri: item.image }}
-                    style={styles.image}
-                    resizeMode="cover"
-                  />
-               ) : <Text>Sem imagem a exibir</Text>}
-               
+               <TouchableOpacity onPress={handleToggle} style={styles.imageToggleButton}>
+                    <Text style={styles.imageToggleText}>
+                        {toggle ? "Ocultar Imagem" : "Mostrar Imagem"}
+                    </Text>
+                </TouchableOpacity>
+                {toggle && item.image ? (
+                    <Image
+                        source={{ uri: item.image }}
+                        style={styles.image}
+                        resizeMode="cover"
+                    />
+                ) : null}
+                {!toggle && !item.image && (
+                    <Text style={styles.noImageText}>Sem imagem a exibir</Text>
+                )}
+
             </TouchableOpacity>
             <TouchableOpacity onPress={() => removerPedido(item.id)} style={{ padding: 15, position: 'absolute', right: 10 }}>
                <Text style={{ textAlign: 'center', fontSize: 16, color: '#fff' }}>
@@ -91,4 +107,21 @@ const styles = StyleSheet.create({
    card: { padding: 16, borderRadius: 8, backgroundColor: "#008bf6", marginBottom: 12 },
    title: { fontWeight: "bold", fontSize: 20, marginBottom: 4, color: "#fff" },
    info: { color: "#fff", fontSize: 16, paddingVertical: 4 },
+   imageToggleText: {
+      fontSize: 16,
+      color: '#0057D9',
+      fontWeight: 'bold',
+  },
+  noImageText: {
+      textAlign: 'center',
+      marginTop: 10,
+      color: '#fff',
+  },
+  imageToggleButton: {
+   backgroundColor: '#fff',
+   padding: 10,
+   borderRadius: 5,
+   alignSelf: 'flex-start',
+   marginTop: 10,
+},
 });
