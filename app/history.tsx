@@ -10,16 +10,15 @@ import { useState } from "react";
 export default function HistoryScreen() {
    const { pedidos, removerPedido } = useAppContext();
    const router = useRouter();
-   const [toggle, setToggle] = useState(false)
+   const [imageVisibility, setImageVisibility] = useState<Record<string, boolean>>({});
 
-   const handleToggle = () => {
-
-     
-         setToggle(!toggle)
-   
-
-   }
-
+   // Função para alternar a visibilidade de um item específico
+   const handleToggle = (id: string) => {
+      setImageVisibility(prev => ({
+         ...prev,
+         [id]: !prev[id]
+      }));
+   };
 
    const renderItem = ({ item }: any) => {
       const blocks = item.codeBlocks || []; // garante que não seja undefined
@@ -40,21 +39,21 @@ export default function HistoryScreen() {
 
                <Text style={styles.info}>Códigos</Text>
                <Text style={[styles.info, { fontSize: 18, color: '#000' }]}>[ {allCodes} ]</Text>
-               <TouchableOpacity onPress={handleToggle} style={styles.imageToggleButton}>
-                    <Text style={styles.imageToggleText}>
-                        {toggle ? "Ocultar Imagem" : "Mostrar Imagem"}
-                    </Text>
-                </TouchableOpacity>
-                {toggle && item.image ? (
-                    <Image
-                        source={{ uri: item.image }}
-                        style={styles.image}
-                        resizeMode="cover"
-                    />
-                ) : null}
-                {!toggle && !item.image && (
-                    <Text style={styles.noImageText}>Sem imagem a exibir</Text>
-                )}
+               <TouchableOpacity onPress={() => handleToggle(item.id)} style={styles.imageToggleButton}>
+                  <Text style={styles.imageToggleText}>
+                     {imageVisibility[item.id] ? "Ocultar Imagem" : "Mostrar Imagem"}
+                  </Text>
+               </TouchableOpacity>
+               {imageVisibility[item.id] && item.image ? (
+                  <Image
+                     source={{ uri: item.image }}
+                     style={styles.image}
+                     resizeMode="cover"
+                  />
+               ) : null}
+               {!item.image && (
+                  <Text style={styles.noImageText}>Sem imagem a exibir</Text>
+               )}
 
             </TouchableOpacity>
             <TouchableOpacity onPress={() => removerPedido(item.id)} style={{ padding: 15, position: 'absolute', right: 10 }}>
@@ -111,17 +110,17 @@ const styles = StyleSheet.create({
       fontSize: 16,
       color: '#0057D9',
       fontWeight: 'bold',
-  },
-  noImageText: {
+   },
+   noImageText: {
       textAlign: 'center',
       marginTop: 10,
       color: '#fff',
-  },
-  imageToggleButton: {
-   backgroundColor: '#fff',
-   padding: 10,
-   borderRadius: 5,
-   alignSelf: 'flex-start',
-   marginTop: 10,
-},
+   },
+   imageToggleButton: {
+      backgroundColor: '#fff',
+      padding: 10,
+      borderRadius: 5,
+      alignSelf: 'flex-start',
+      marginTop: 10,
+   },
 });

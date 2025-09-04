@@ -74,6 +74,13 @@ export default function HomeScreen() {
         >
           <Text style={styles.buttonText}>Histórico</Text>
         </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push("/modelos")}
+        >
+          <Text style={styles.buttonText}>Modelos de Impressoras</Text>
+        </TouchableOpacity>
       </Animated.View>
 
     </SafeAreaView>
@@ -100,28 +107,28 @@ const styles = StyleSheet.create({
     right: 0,
     height: height * 0.6,
     backgroundColor: "#0036a0",
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    padding: 20,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    padding: 18,
     alignItems: "center",
 
   },
   button: {
     backgroundColor: "#fff",
-    height: 70,
+    height: 75,
     borderRadius: 50,
-    marginVertical: 20,
+    marginVertical: 15,
     width: "100%",
     alignItems: "center",
     justifyContent: 'center',
-
   },
   buttonText: {
+    
     width: '100%',
     textAlign: 'center',
     color: "#000",
     textTransform: 'uppercase',
     fontSize: 19,
-    fontWeight: "600",
+    fontWeight: "800",
   },
 });

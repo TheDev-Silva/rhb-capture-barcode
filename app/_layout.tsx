@@ -12,6 +12,7 @@ export default function Layout() {
             <Stack.Screen name="capture" options={{ title: "Capturar Código" }} />
             <Stack.Screen name="search" options={{ title: "Buscar Pedido" }} />
             <Stack.Screen name="history" options={{ title: "Histórico" }} />
+            <Stack.Screen name="modelos" options={{ title: "Modelos" }} />
             <Stack.Screen name="details/[id]" options={{ title: "Detalhes do Pedido" }} />
          </Stack>
 

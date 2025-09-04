@@ -190,8 +190,14 @@ export default function CaptureScreen() {
 
    return (
       <SafeAreaView style={styles.safeArea}>
+
          {!scanning ? (
             <View style={styles.formArea}>
+               <View style={{ paddingVertical: 20, flexDirection: 'column' }}>
+
+                  <Text style={{ textAlign: 'center', fontSize: 30, fontWeight: '800' }}>Bem-vindo!</Text>
+                  <Text style={{ textAlign: 'center', fontSize: 20 }}>Colete as informações, salve e compartilhada!</Text>
+               </View>
                <TouchableOpacity style={styles.uploadBtn} onPress={pickImage}>
                   <Text style={styles.uploadText}>{image ? "Refazer Foto" : "Tirar Foto"}</Text>
                </TouchableOpacity>
@@ -268,15 +274,57 @@ export default function CaptureScreen() {
 }
 
 const styles = StyleSheet.create({
-   safeArea: { flex: 1, backgroundColor: "#f5f5f5" },
-   formArea: { flex: 1, padding: 16 },
-   uploadBtn: { width: "100%", backgroundColor: "#0057D9", padding: 16, borderRadius: 50, marginBottom: 16, alignItems: "center" },
-   uploadText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
-   input: { borderWidth: 1, borderColor: "#ccc", padding: 12, borderRadius: 8, marginBottom: 12, backgroundColor: "#fff" },
-   chatArea: { position: "absolute", bottom: 10, left: 0, right: 0, height: "60%", backgroundColor: "#008bf699", padding: 12, borderTopLeftRadius: 16, borderTopRightRadius: 16, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 4 },
-   buttonsRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 16, width: "100%" },
+   safeArea: {
+      flex: 1,
+      backgroundColor: "#f5f5f5"
+   },
+   formArea: {
+      flex: 1,
+      padding: 16
+   },
+   uploadBtn: {
+      width: "100%",
+      backgroundColor: "#0057D9",
+      padding: 16,
+      borderRadius: 50,
+      marginBottom: 16,
+      alignItems: "center"
+   },
+   uploadText: {
+      color: "#fff",
+      fontWeight: "bold",
+      fontSize: 16
+   },
+   input: {
+      borderWidth: 1,
+      borderColor: "#ccc",
+      padding: 18,
+      borderRadius: 8,
+      marginBottom: 12,
+      backgroundColor: "#fff"
+   },
+   chatArea: {
+      position: "absolute",
+      bottom: 10,
+      left: 0,
+      right: 0,
+      height: "53%",
+      backgroundColor: "#008bf699",
+      padding: 12,
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
+      shadowColor: "#000",
+      shadowOpacity: 0.1,
+      shadowRadius: 4
+   },
+   buttonsRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginTop: 16,
+      width: "100%"
+   },
    actionBtn: { flex: 1, backgroundColor: "#0057D9", padding: 14, borderRadius: 8, alignItems: "center", marginHorizontal: 4 },
-   buttonText: { color: "#fff", fontWeight: "600" },
+   buttonText: { color: "#fff", fontWeight: "800" },
    fullScreenCamera: { ...StyleSheet.absoluteFillObject, justifyContent: "flex-end", alignItems: "center" },
    overlayCodes: { position: "absolute", top: 50, left: 16, right: 16, maxHeight: 200, backgroundColor: "#00000088", padding: 8, borderRadius: 12 },
    codeText: { color: "#fff", fontSize: 16 },
