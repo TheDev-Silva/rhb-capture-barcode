@@ -1,107 +1,107 @@
-import { useLocalSearchParams } from "expo-router";
-import { View, Text, StyleSheet, FlatList, Image } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { View, Text, StyleSheet, FlatList, Image, ScrollView, TouchableOpacity } from "react-native";
 import { useAppContext } from "../../src/context/AppContext";
 import { SafeAreaView } from "react-native-safe-area-context";
-
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Pedido, CodeBlock } from "../../src/types";
 
 export default function DetailsScreen() {
   const { id } = useLocalSearchParams();
-  const { buscarPedido } = useAppContext();
+  const { pedidos, removerPedido } = useAppContext();
+  const router = useRouter();
 
-  const pedido = buscarPedido(id as string);
+  // Use o .find() para buscar o pedido, é mais eficiente
+  const pedido = pedidos.find(p => p.id === id);
 
-  
-
-  console.log(id);
+  const handleRemove = () => {
+    // Confirma com o usuário antes de excluir
+    removerPedido(id as string);
+    router.back();
+  };
 
   if (!pedido) {
     return (
-      <SafeAreaView style={styles.SafeArea}>
-        <View style={styles.container}>
-          <Text>Pedido não encontrado. {pedido}</Text>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={''}>
+          <Text style={styles.notFoundText}>Pedido não encontrado.</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.SafeArea}>
-      <View style={styles.container}>
-        <Text style={styles.title}>{pedido.nome}</Text>
-        <Text>Pedido Nº: {pedido.numero}</Text>
-        <Text>Data: {new Date(pedido.criadoEm).toLocaleString()}</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <MaterialCommunityIcons name="arrow-left-thick" size={30} color="#0057D9" />
+          </TouchableOpacity>
+          <Text style={styles.headerText}>Detalhes do Pedido</Text>
+        </View>
 
-        <Text style={styles.subtitle}>Códigos:</Text>
-        <FlatList
-          data={Array.isArray(pedido.codeBlocks) ? pedido.codeBlocks : []}
-          keyExtractor={(_, index) => index.toString()}
-          renderItem={({ item }) => (
-            <View style={styles.block}>
-              <Text style={styles.timestamp}>
-                {item.timestamp ? new Date(item.timestamp).toLocaleString() : 'Sem data'}
-              </Text>
-              {item.codes.map((code, i) => (
-                <Text key={i} style={styles.code}>
-                  {code}
-                </Text>
-              ))}
+        <View style={styles.card}>
+          <Text style={styles.infoTitle}>Nome:</Text>
+          <Text style={styles.infoText}>{pedido.nome}</Text>
+
+          <Text style={styles.infoTitle}>Número do Pedido:</Text>
+          <Text style={styles.infoText}>{pedido.numero}</Text>
+
+          <Text style={styles.infoTitle}>Criado em:</Text>
+          <Text style={styles.infoText}>{new Date(pedido.criadoEm).toLocaleString()}</Text>
+
+          {pedido.image && (
+            <View style={styles.imageContainer}>
+              <Text style={styles.infoTitle}>Imagem Anexada:</Text>
+              <Image
+                source={{ uri: pedido.image }}
+                style={styles.image}
+                resizeMode="contain"
+              />
             </View>
           )}
-        />
 
-        {/* Mostrar imagem se existir */}
-        {pedido.image && (
-          <Image
-            source={{ uri: pedido.image }}
-            style={styles.image}
-            resizeMode="contain"
-          />
-        )}
+          <Text style={styles.infoTitle}>Códigos Coletados:</Text>
+          {pedido.codeBlocks.map((block: CodeBlock, index: number) => (
+            <View key={index} style={styles.codeBlock}>
+              <Text style={styles.blockTitle}>{new Date(block.timestamp).toLocaleString()}</Text>
+              {block.codes.map((code: string) => (
+                <Text key={code} style={styles.codeText}>• {code}</Text>
+              ))}
+            </View>
+          ))}
+        </View>
 
-        {/* Mostrar foto se existir (caso use os dois campos) */}
-        
-      </View>
+        <TouchableOpacity onPress={handleRemove} style={styles.deleteButton}>
+          <Text style={styles.deleteButtonText}>Excluir Pedido</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: "#fff",
-    width: "100%",
-    marginTop: 0,
-  },
-  SafeArea: {
-    flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-  },
-  title: { fontSize: 20, fontWeight: "bold", marginBottom: 8 },
-  subtitle: { fontSize: 16, fontWeight: "600", marginTop: 16, marginBottom: 8 },
-  block: {
-    marginBottom: 12,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: "#ddd",
+  safeArea: { flex: 1, backgroundColor: "#f5f5f5" },
+  scrollContainer: { padding: 16 },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  headerText: { fontSize: 24, fontWeight: 'bold', marginLeft: 10, color: '#0036a0' },
+  notFoundText: { textAlign: 'center', marginTop: 50, fontSize: 18, color: 'gray' },
+  card: { padding: 16, borderRadius: 10, backgroundColor: "#fff", marginBottom: 20, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1 },
+  infoTitle: { fontSize: 16, fontWeight: 'bold', marginTop: 10, color: '#555' },
+  infoText: { fontSize: 18, marginBottom: 5, color: '#333' },
+  imageContainer: { marginTop: 10 },
+  image: { width: '100%', minHeight: 250, borderRadius: 8, marginTop: 5 },
+  codeBlock: { marginTop: 10, padding: 10, backgroundColor: '#eef', borderRadius: 8 },
+  blockTitle: { fontWeight: 'bold', color: '#0057D9', marginBottom: 5 },
+  codeText: { fontSize: 16, color: '#333' },
+  deleteButton: {
+    backgroundColor: '#d9534f',
+    padding: 15,
     borderRadius: 8,
-    backgroundColor: "#f9f9f9",
+    alignItems: 'center',
   },
-  timestamp: {
-    fontSize: 12,
-    color: "#555",
-    marginBottom: 6,
-  },
-  code: {
-    fontSize: 14,
-    marginBottom: 4,
-    color: "#333",
-  },
-  image: {
-    width: "100%",
-    height: 200,
-    marginTop: 16,
-    borderRadius: 10,
+  deleteButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });

@@ -11,4 +11,5 @@ export interface Pedido {
   photoTimestamp?: string;  // timestamp da foto
   codeBlocks: CodeBlock[];  // blocos de códigos escaneados
   criadoEm: string;
+  allCodes: string[]
 }

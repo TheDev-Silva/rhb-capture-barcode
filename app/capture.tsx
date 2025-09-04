@@ -20,7 +20,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Audio } from "expo-av";
 import { CodeBlock } from "../src/types";
 
-
 const { height } = Dimensions.get("window");
 
 const generateId = () => Math.random().toString(36).substring(2, 10);
@@ -70,7 +69,7 @@ export default function CaptureScreen() {
 
    const pickImage = async () => {
       const result = await ImagePicker.launchCameraAsync({
-         mediaTypes: 'images',
+         mediaTypes: ImagePicker.MediaTypeOptions.Images,
          allowsEditing: true,
          aspect: [4, 3],
          quality: 0.7,
@@ -78,19 +77,16 @@ export default function CaptureScreen() {
 
       if (!result.canceled) {
          const tempUri = result.assets[0].uri;
-         const fileName = tempUri.split('/').pop(); // Extrai o nome do arquivo
+         const fileName = tempUri.split('/').pop();
 
-         // Define o caminho permanente dentro do diretório de documentos do app
          const permanentUri = `${FileSystem.documentDirectory}${fileName}`;
 
          try {
-            // Move o arquivo do cache para o local permanente
             await FileSystem.moveAsync({
                from: tempUri,
                to: permanentUri,
             });
 
-            // Atualiza o estado com a nova URI permanente
             setImage(permanentUri);
             setPhotoTimestamp(new Date().toISOString());
 
@@ -101,11 +97,12 @@ export default function CaptureScreen() {
       }
    };
 
-
    const handleBarCodeScanned = ({ data }: { data: string }) => {
       if (!scannedCodes.includes(data)) {
          setScannedCodes((prev) => [...prev, data]);
          playScanSound();
+      } else {
+         console.log("Código já escaneado!");
       }
    };
 
@@ -127,76 +124,49 @@ export default function CaptureScreen() {
       );
    };
 
-
    const salvarPedido = () => {
-      if (scannedCodes.length > 0) {
-         // cria o último bloco localmente
-         const timestamp = new Date().toISOString();
-         const ultimoBloco = { timestamp, codes: scannedCodes };
-         const todosBlocos = [...codeBlocks, ultimoBloco];
+      const todosBlocos = scannedCodes.length > 0
+         ? [...codeBlocks, { timestamp: new Date().toISOString(), codes: scannedCodes }]
+         : codeBlocks;
 
-         if (!nome || !numeroPedido || todosBlocos.length === 0) {
-            Alert.alert("Preencha todos os campos antes de salvar.");
-            return;
-         }
-
-         const novoPedido = {
-            id: generateId(),
-            numero: numeroPedido,
-            image: image,
-            nome: nome,
-            codeBlocks: todosBlocos,
-            criadoEm: new Date().toISOString(),
-         };
-
-         adicionarPedido(novoPedido as any);
-         Alert.alert("Sucesso", "Pedido salvo com sucesso!");
-         router.push("/history");
-
-         // limpa estados
-         setScannedCodes([]);
-         setCodeBlocks([]);
-         setImage("");
-         setPhotoTimestamp("");
-      } else {
-         if (!nome || !numeroPedido || !image || codeBlocks.length === 0) {
-            Alert.alert("Preencha todos os campos antes de salvar.");
-            return;
-         }
-         // se não houver códigos novos, salvar normalmente
-         const novoPedido = {
-            id: generateId(),
-            numero: numeroPedido,
-            image: image,
-            nome: nome,
-            codeBlocks,
-            criadoEm: new Date().toISOString(),
-         };
-         adicionarPedido(novoPedido as any);
-         Alert.alert("Sucesso", "Pedido salvo com sucesso!");
-         router.push("/history");
-
-         // limpa estados
-         setScannedCodes([]);
-         setCodeBlocks([]);
-         setImage("");
-         setPhotoTimestamp("");
+      // Validação unificada
+      if (!nome || !numeroPedido || !image || todosBlocos.length === 0) {
+         Alert.alert("Atenção", "Por favor, preencha todos os campos e colete pelo menos um código de barras.");
+         return;
       }
+
+      const novoPedido = {
+         id: generateId(),
+         numero: numeroPedido,
+         image,
+         nome,
+         codeBlocks: todosBlocos,
+         criadoEm: new Date().toISOString(),
+      };
+
+      adicionarPedido(novoPedido as any);
+      Alert.alert("Sucesso", "Pedido salvo com sucesso!");
+      router.push("/history");
+
+      // Limpa todos os estados de uma vez
+      setNome("");
+      setNumeroPedido("");
+      setImage("");
+      setPhotoTimestamp("");
+      setScannedCodes([]);
+      setCodeBlocks([]);
    };
 
-
-   if (hasPermission === null) return <Text>Solicitando permissão da câmera...</Text>;
-   if (hasPermission === false) return <Text>Permissão negada para usar a câmera.</Text>;
+   if (hasPermission === null) return <Text style={styles.permissionText}>Solicitando permissão da câmera...</Text>;
+   if (hasPermission === false) return <Text style={styles.permissionText}>Permissão negada para usar a câmera.</Text>;
 
    return (
       <SafeAreaView style={styles.safeArea}>
-
          {!scanning ? (
             <View style={styles.formArea}>
                <View style={{ paddingVertical: 20, flexDirection: 'column' }}>
-
                   <Text style={{ textAlign: 'center', fontSize: 30, fontWeight: '800' }}>Bem-vindo!</Text>
-                  <Text style={{ textAlign: 'center', fontSize: 20 }}>Colete as informações, salve e compartilhada!</Text>
+                  <Text style={{ textAlign: 'center', fontSize: 20 }}>Colete as informações, salve e compartilhe!</Text>
                </View>
                <TouchableOpacity style={styles.uploadBtn} onPress={pickImage}>
                   <Text style={styles.uploadText}>{image ? "Refazer Foto" : "Tirar Foto"}</Text>
@@ -205,7 +175,7 @@ export default function CaptureScreen() {
                <TouchableOpacity
                   style={[styles.uploadBtn, { opacity: !image ? 0.5 : 1 }]}
                   onPress={() => {
-                     finalizarBloco(); // salva qualquer bloco antes de abrir scanner
+                     finalizarBloco();
                      setScanning(true);
                   }}
                   disabled={!image}
@@ -323,11 +293,52 @@ const styles = StyleSheet.create({
       marginTop: 16,
       width: "100%"
    },
-   actionBtn: { flex: 1, backgroundColor: "#0057D9", padding: 14, borderRadius: 8, alignItems: "center", marginHorizontal: 4 },
-   buttonText: { color: "#fff", fontWeight: "800" },
-   fullScreenCamera: { ...StyleSheet.absoluteFillObject, justifyContent: "flex-end", alignItems: "center" },
-   overlayCodes: { position: "absolute", top: 50, left: 16, right: 16, maxHeight: 200, backgroundColor: "#00000088", padding: 8, borderRadius: 12 },
-   codeText: { color: "#fff", fontSize: 16 },
-   timestamp: { fontSize: 12, color: "#fff", marginBottom: 2 },
-   stopScannerBtn: { backgroundColor: "#d9534f", padding: 16, borderRadius: 50, marginBottom: 40, width: "80%", alignItems: "center" },
+   actionBtn: {
+      flex: 1,
+      backgroundColor: "#0057D9",
+      padding: 14,
+      borderRadius: 8,
+      alignItems: "center",
+      marginHorizontal: 4
+   },
+   buttonText: {
+      color: "#fff",
+      fontWeight: "800"
+   },
+   fullScreenCamera: {
+      ...StyleSheet.absoluteFillObject,
+      justifyContent: "flex-end",
+      alignItems: "center"
+   },
+   overlayCodes: {
+      position: "absolute",
+      top: 50,
+      left: 16,
+      right: 16,
+      maxHeight: 200,
+      backgroundColor: "#00000088",
+      padding: 8,
+      borderRadius: 12
+   },
+   codeText: {
+      color: "#fff",
+      fontSize: 16
+   },
+   timestamp: {
+      fontSize: 12,
+      color: "#fff",
+      marginBottom: 2
+   },
+   stopScannerBtn: {
+      backgroundColor: "#d9534f",
+      padding: 16,
+      borderRadius: 50,
+      marginBottom: 40,
+      width: "80%",
+      alignItems: "center"
+   },
+   permissionText: {
+      textAlign: 'center',
+      marginTop: 20
+   },
 });
