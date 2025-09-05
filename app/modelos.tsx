@@ -3,37 +3,44 @@ import { Text, View, StyleSheet, TextInput, Image, TouchableOpacity, FlatList } 
 import { SafeAreaView } from "react-native-safe-area-context";
 import ImageModal from '../src/models/imageModal'; // Importe o componente que criamos
 
+
 // Dados de exemplo para simular modelos (substitua com seus próprios dados)
 const MODELOS_MOCK = [
     {
         id: '1',
-        nome: 'Impressora Multifuncional Mono Pantum Bm5100fdw Laser 127v',
+        name: 'Impressora Multifuncional Mono Pantum Bm5100fdw Laser 127v',
         imageUri: require('../assets/modelos/Captura de tela 2025-09-04 224636.png'),
+        codeInit: 'CK3B00 - CR8NV0'
     },
     {
         id: '2',
-        nome: 'Impressora Laser Pantum P3305dw Usb Lan Wireless Auto Duplex',
+        name: 'Impressora Laser Pantum P3305dw Usb Lan Wireless Auto Duplex',
         imageUri: require('../assets/modelos/Captura de tela 2025-09-04 234808.png'),
+        codeInit: ''
     },
     {
         id: '3',
-        nome: 'Impressora Função Única Mono Pantum P3010dw Branco 127v',
+        name: 'Impressora Função Única Mono Pantum P3010dw Branco 127v',
         imageUri: require('../assets/modelos/Captura de tela 2025-09-04 235017.png'),
+        codeInit: ''
     },
     {
         id: '4',
-        nome: 'Impressora A Laser Ethernet Pantum Bp5100dw', // Novo item para demonstrar a funcionalidade
+        name: 'Impressora A Laser Ethernet Pantum Bp5100dw', // Novo item para demonstrar a funcionalidade
         imageUri: require('../assets/modelos/Captura de tela 2025-09-04 235258.png'),
+        codeInit: ''
     },
     {
         id: '5',
-        nome: 'Multifuncional Laser Pantum M6559nw 110v Com Wifi', // Novo item para demonstrar a funcionalidade
+        name: 'Multifuncional Laser Pantum M6559nw 110v Com Wifi', // Novo item para demonstrar a funcionalidade
         imageUri: require('../assets/modelos/Captura de tela 2025-09-04 235627.png'),
+        codeInit: ''
     },
     {
         id: '6',
-        nome: 'Impressora A Laser Ethernet Pantum Bp5100dw', // Novo item para demonstrar a funcionalidade
+        name: 'Impressora A Laser Ethernet Pantum Bp5100dw', // Novo item para demonstrar a funcionalidade
         imageUri: require('../assets/modelos/Captura de tela 2025-09-04 235258.png'),
+        codeInit: ''
     }
 ];
 
@@ -53,12 +60,16 @@ export default function Modelos() {
     };
 
     const filteredModels = MODELOS_MOCK.filter(model =>
-        model.nome.toLowerCase().includes(searchTerm.toLowerCase())
+        model.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const renderItem = ({ item }: any) => (
         <View style={styles.modelCard}>
-            <Text style={styles.modelName}>{item.nome}</Text>
+            <View style={{width: 200, gap: 10}}>
+                <Text style={styles.modelName}>{item.name}</Text>
+                <Text>{item.codeInit}</Text>
+
+            </View>
             <TouchableOpacity onPress={() => openModal(item.imageUri)}>
                 {item.imageUri ? (
                     <Image

@@ -16,5 +16,6 @@ export interface Pedido {
 export interface Modelos {
   id: string;
   name: string;
+  imageUri: number;
   codeInit: string[];
 }
