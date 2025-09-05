@@ -13,3 +13,8 @@ export interface Pedido {
   criadoEm: string;
   allCodes: string[]
 }
+export interface Modelos {
+  id: string;
+  name: string;
+  codeInit: string[];
+}

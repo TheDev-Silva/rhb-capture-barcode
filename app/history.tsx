@@ -1,4 +1,4 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput } from "react-native";
 import { useRouter } from "expo-router";
 import { useAppContext } from "../src/context/AppContext";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -8,6 +8,27 @@ import { useState } from "react";
 export default function HistoryScreen() {
    const { pedidos, removerPedido } = useAppContext();
    const router = useRouter();
+   // 1. Estado para armazenar o termo de busca
+   const [searchTerm, setSearchTerm] = useState('');
+
+   // 2. Lógica de filtragem
+   const filteredPedidos = pedidos.filter(pedido => {
+      // Converte o termo de busca e as strings de dados para minúsculas
+      const lowerCaseSearchTerm = searchTerm.toLowerCase();
+
+      // Verifica se o termo de busca está no nome ou número do pedido
+      const matchesNameOrNumber = pedido.nome.toLowerCase().includes(lowerCaseSearchTerm) ||
+         pedido.numero.toLowerCase().includes(lowerCaseSearchTerm);
+
+      // Concatena todos os códigos de todos os blocos em uma única string
+      const allCodes = pedido.codeBlocks.flatMap(block => block.codes).join(' ').toLowerCase();
+
+      // Verifica se o termo de busca está nos códigos
+      const matchesCode = allCodes.includes(lowerCaseSearchTerm);
+
+      return matchesNameOrNumber || matchesCode;
+   });
+
 
    const renderItem = ({ item }: any) => {
       return (
@@ -18,17 +39,15 @@ export default function HistoryScreen() {
             >
                <View style={styles.cardHeader}>
                   <View>
-                     <Text style={styles.title}>{item.nome}</Text>
-                     <Text style={styles.info}>Pedido: {item.numero}</Text>
+                     <Text style={styles.title}>NOME: {item.nome}</Text>
+                     <Text style={styles.info}>PEDIDO: {item.numero}</Text>
                   </View>
                   <MaterialCommunityIcons name="arrow-right" size={24} color="#fff" />
                </View>
-
                <Text style={styles.showAllText}>
                   Exibir todos os detalhes
                </Text>
             </TouchableOpacity>
-
             <TouchableOpacity onPress={() => removerPedido(item.id)} style={styles.deleteButton}>
                <MaterialCommunityIcons name="delete" size={40} color={'#f009'} />
             </TouchableOpacity>
@@ -36,15 +55,26 @@ export default function HistoryScreen() {
       );
    };
 
+   
    return (
       <SafeAreaView style={styles.safeArea}>
          <View style={styles.container}>
             <Text style={styles.header}>Histórico</Text>
-            {pedidos.length === 0 ? (
-               <Text style={{ textAlign: 'center', marginTop: 20 }}>Nenhum pedido salvo.</Text>
+            <TextInput
+               placeholder="Busque por nome, número ou código..."
+               placeholderTextColor="#888"
+               style={styles.searchInput}
+               // 3. Conecta o TextInput ao estado de busca
+               onChangeText={setSearchTerm}
+               value={searchTerm}
+            />
+
+            {filteredPedidos.length === 0 ? (
+               <Text style={styles.noResultsText}>Nenhum pedido encontrado.</Text>
             ) : (
+               // 4. Usa a lista filtrada
                <FlatList
-                  data={pedidos}
+                  data={filteredPedidos}
                   keyExtractor={(item) => item.id}
                   renderItem={renderItem}
                />
@@ -63,6 +93,20 @@ const styles = StyleSheet.create({
       textTransform: "uppercase",
       fontWeight: "bold",
       color: "#0036a0",
+   },
+   searchInput: {
+      width: '100%',
+      padding: 15,
+      borderColor: '#c5c5c5',
+      borderWidth: 1,
+      marginBottom: 20,
+      borderRadius: 10,
+      backgroundColor: '#f9f9f9'
+   },
+   noResultsText: {
+      textAlign: 'center',
+      marginTop: 20,
+      color: '#888'
    },
    card: {
       padding: 16,
