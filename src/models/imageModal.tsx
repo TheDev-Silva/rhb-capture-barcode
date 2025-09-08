@@ -22,10 +22,11 @@ const ImageModal: React.FC<ImageModalProps> = ({ imageUri, isVisible, onClose })
             <ImageViewer
                 imageUrls={images}
                 enableSwipeDown={true}       // Permite fechar o modal arrastando para baixo
+
                 onSwipeDown={onClose}        // Função para ser chamada ao arrastar para baixo
                 onCancel={onClose}           // Função para ser chamada ao cancelar
                 renderIndicator={() => <></>} // Oculta o indicador de página (não é necessário para uma única imagem)
-                saveToLocalByLongPress={false} // Desabilita a opção de salvar imagem ao segurar
+                saveToLocalByLongPress={true} // Desabilita a opção de salvar imagem ao segurar
                 style={styles.viewer}        // Estilo opcional para o visualizador
             />
         </Modal>

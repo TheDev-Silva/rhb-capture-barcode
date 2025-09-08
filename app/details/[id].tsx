@@ -1,9 +1,10 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { View, Text, StyleSheet, FlatList, Image, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, FlatList, Image, ScrollView, TouchableOpacity, Share } from "react-native";
 import { useAppContext } from "../../src/context/AppContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Pedido, CodeBlock } from "../../src/types";
+import { CodeBlock } from "../../src/types";
+
 
 export default function DetailsScreen() {
   const { id } = useLocalSearchParams();
@@ -18,6 +19,35 @@ export default function DetailsScreen() {
     removerPedido(id as string);
     router.back();
   };
+
+  const handleShare = async () => {
+
+    if (!pedido) return;
+
+    const allCodes = pedido.codeBlocks.flatMap((cb) => cb.codes);
+
+    const message = `
+    Detalhes do Pedido
+    Autor: ${pedido.nome}
+    Número: ${pedido.numero}
+    Criado em: ${new Date(pedido.criadoEm).toLocaleString()}
+    
+    🔑 Códigos:
+    ${allCodes.map(c => "•" + c).join("\n")}
+        `;
+
+    try {
+      await Share.share({
+        message,
+        url: pedido.image ?? undefined, // se tiver imagem, alguns apps usam
+        title: `Pedido ${pedido.numero}`,
+      });
+    } catch (error) {
+      console.error("Erro ao compartilhar:", error);
+    }
+
+  }
+
 
   if (!pedido) {
     return (
@@ -71,6 +101,9 @@ export default function DetailsScreen() {
           ))}
         </View>
 
+        <TouchableOpacity onPress={handleShare} style={styles.shareButton}>
+          <Text style={styles.shareButtonText}>Compartilhar Pedido</Text>
+        </TouchableOpacity>
         <TouchableOpacity onPress={handleRemove} style={styles.deleteButton}>
           <Text style={styles.deleteButtonText}>Excluir Pedido</Text>
         </TouchableOpacity>
@@ -93,6 +126,18 @@ const styles = StyleSheet.create({
   codeBlock: { marginTop: 10, padding: 10, backgroundColor: '#eef', borderRadius: 8 },
   blockTitle: { fontWeight: 'bold', color: '#0057D9', marginBottom: 5 },
   codeText: { fontSize: 16, color: '#333' },
+  shareButton: {
+    backgroundColor: '#28a745',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  shareButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
   deleteButton: {
     backgroundColor: '#d9534f',
     padding: 15,

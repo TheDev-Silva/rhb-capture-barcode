@@ -17,7 +17,6 @@ export default function HomeScreen() {
   const router = useRouter();
 
   const translateY = useRef(new Animated.Value(height)).current; // começa fora da tela
-  console.log(translateY);
 
   const opacidyValue = useRef(new Animated.Value(0)).current
   useEffect(() => {
@@ -57,22 +56,22 @@ export default function HomeScreen() {
           onPress={() => router.push("/capture")}
         >
           <Text style={styles.buttonText}>Coletar código</Text>
-          <Text style={[styles.buttonText, { fontSize: 14, fontWeight: '500', textTransform: 'none' }]}>(Serial Number)</Text>
+          <Text style={[styles.buttonText, { fontSize: 16, fontWeight: '500', textTransform: 'none' }]}>(número de série)</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.button}
           onPress={() => router.push("/search")}
         >
-          <Text style={styles.buttonText}>Buscar por...</Text>
-          <Text style={styles.buttonText}>barcode / nome / pedido</Text>
+          <Text style={styles.buttonText}>Números de séries Coletados</Text>
+          
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.button}
           onPress={() => router.push("/history")}
         >
-          <Text style={styles.buttonText}>Histórico</Text>
+          <Text style={styles.buttonText}>Histórico</Text><Text style={[styles.buttonText, {fontSize: 16, fontWeight: '500', textTransform: 'none'}]}>busque por barcode / nome / pedido</Text>
         </TouchableOpacity>
         
         <TouchableOpacity
