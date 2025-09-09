@@ -24,7 +24,7 @@ const MODELOS_MOCK = [
         id: '3',
         name: 'Impressora Função Única Mono Pantum P3010dw Branco 127v',
         imageUri: require('../assets/modelos/Captura de tela 2025-09-04 235017.png'),
-        codeInit: 'CS5W00'
+        codeInit: ['CS5W00']
     },
     {
         id: '4',
@@ -81,9 +81,19 @@ export default function Modelos() {
         setSelectedImageUri(null);
     };
 
-    const filteredModels = MODELOS_MOCK.filter(model =>
-        model.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredModels = MODELOS_MOCK.filter(modelo => {
+        const termo = searchTerm.toLowerCase();
+    
+        // busca pelo nome
+        const matchName = modelo.name.toLowerCase().includes(termo);
+    
+        // busca pelos prefixos de código (array de strings)
+        const matchCode = modelo.codeInit?.some(prefix =>
+            prefix.toLowerCase().startsWith(termo)
+        );
+    
+        return matchName || matchCode;
+    });
 
     const renderItem = ({ item }: any) => {
         const codigosDoModelo = getCodigosDoModelo(item, allCodes);
