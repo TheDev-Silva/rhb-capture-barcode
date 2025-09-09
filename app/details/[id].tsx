@@ -33,8 +33,7 @@ export default function DetailsScreen() {
     Criado em: ${new Date(pedido.criadoEm).toLocaleString()}
     
     🔑 Códigos:
-    ${allCodes.map(c => "•" + c).join("\n")}
-        `;
+    ${allCodes.map(c => "- " + c).join("\n ")}`;
 
     try {
       await Share.share({
@@ -45,6 +44,7 @@ export default function DetailsScreen() {
     } catch (error) {
       console.error("Erro ao compartilhar:", error);
     }
+    console.log('dados da', message);
 
   }
 

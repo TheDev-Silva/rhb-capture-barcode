@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Text, View, StyleSheet, TextInput, Image, TouchableOpacity, FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ImageModal from '../src/models/imageModal'; // Importe o componente que criamos
+import { Pedido } from "../src/types";
+import { useAppContext } from "../src/context/AppContext";
 
 
 // Dados de exemplo para simular modelos (substitua com seus próprios dados)
@@ -10,44 +12,64 @@ const MODELOS_MOCK = [
         id: '1',
         name: 'Impressora Multifuncional Mono Pantum Bm5100fdw Laser 127v',
         imageUri: require('../assets/modelos/Captura de tela 2025-09-04 224636.png'),
-        codeInit: 'CK3B00 - CR8NV0'
+        codeInit: ['CK3B00 - CR8NV0']
     },
     {
         id: '2',
         name: 'Impressora Laser Pantum P3305dw Usb Lan Wireless Auto Duplex',
         imageUri: require('../assets/modelos/Captura de tela 2025-09-04 234808.png'),
-        codeInit: ''
+        codeInit: ['CP2N00']
     },
     {
         id: '3',
         name: 'Impressora Função Única Mono Pantum P3010dw Branco 127v',
         imageUri: require('../assets/modelos/Captura de tela 2025-09-04 235017.png'),
-        codeInit: ''
+        codeInit: 'CS5W00'
     },
     {
         id: '4',
         name: 'Impressora A Laser Ethernet Pantum Bp5100dw', // Novo item para demonstrar a funcionalidade
         imageUri: require('../assets/modelos/Captura de tela 2025-09-04 235258.png'),
-        codeInit: ''
+        codeInit: ['CWB800']
     },
     {
         id: '5',
         name: 'Multifuncional Laser Pantum M6559nw 110v Com Wifi', // Novo item para demonstrar a funcionalidade
         imageUri: require('../assets/modelos/Captura de tela 2025-09-04 235627.png'),
-        codeInit: ''
+        codeInit: ['CJ5V00']
     },
     {
         id: '6',
         name: 'Impressora A Laser Ethernet Pantum Bp5100dw', // Novo item para demonstrar a funcionalidade
         imageUri: require('../assets/modelos/Captura de tela 2025-09-04 235258.png'),
-        codeInit: ''
+        codeInit: ['CBVV00']
     }
 ];
 
+// 🔹 Função para extrair todos os códigos de todos os pedidos
+function getAllCodesFromPedidos(pedidos: Pedido[]): string[] {
+    return pedidos.flatMap((pedido) =>
+        pedido.codeBlocks.flatMap((block) => block.codes)
+    );
+}
+
+// 🔹 Função para pegar os códigos que pertencem a um modelo
+function getCodigosDoModelo(modelo: { codeInit: string[] }, allCodes: string[]) {
+    return allCodes.filter((codigo) =>
+        modelo.codeInit.some((prefix) => codigo.startsWith(prefix))
+    );
+}
+
+
+
+
 export default function Modelos() {
+    const { pedidos } = useAppContext()
     const [searchTerm, setSearchTerm] = useState('');
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedImageUri, setSelectedImageUri] = useState<number | null>(null);
+
+    const allCodes = useMemo(() => getAllCodesFromPedidos(pedidos), [pedidos])
 
     const openModal = (imageUri: number) => {
         setSelectedImageUri(imageUri);
@@ -63,40 +85,56 @@ export default function Modelos() {
         model.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const renderItem = ({ item }: any) => (
-        <View style={styles.modelCard}>
-            <View style={{width: 200, gap: 10}}>
-                <Text style={styles.modelName}>{item.name}</Text>
-                <Text>{item.codeInit}</Text>
+    const renderItem = ({ item }: any) => {
+        const codigosDoModelo = getCodigosDoModelo(item, allCodes);
 
-            </View>
-            <TouchableOpacity onPress={() => openModal(item.imageUri)}>
-                {item.imageUri ? (
+        return (
+            <View style={styles.modelCard}>
+                <View style={{ flex: 1, gap: 8 }}>
+                    <Text style={styles.modelName}>{item.name}</Text>
+                    <Text style={{ fontSize: 12, color: "#666" }}>
+                        Prefixos: {item.codeInit.join(", ")}
+                    </Text>
+
+                    {codigosDoModelo.length > 0 ? (
+                        <View style={{ marginTop: 5 }}>
+                            <Text style={{ fontWeight: "600" }}>Números de série:</Text>
+                            {codigosDoModelo.map((codigo) => (
+                                <Text key={codigo} style={{ fontSize: 13 }}>
+                                    {codigo}
+                                </Text>
+                            ))}
+                        </View>
+                    ) : (
+                        <Text style={{ fontSize: 12, color: "#999" }}>
+                            Nenhum número escaneado ainda
+                        </Text>
+                    )}
+                </View>
+
+                <TouchableOpacity onPress={() => openModal(item.imageUri)}>
                     <Image
                         source={item.imageUri}
                         style={styles.modelImage}
                         resizeMode="contain"
                     />
-                ) : (
-                    <View style={styles.placeholderImage}>
-                        <Text style={styles.placeholderText}>Sem imagem</Text>
-                    </View>
-                )}
-            </TouchableOpacity>
-        </View>
-    );
+                </TouchableOpacity>
+            </View>
+        );
+    };
 
     return (
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.container}>
                 <Text style={styles.header}>Modelos</Text>
                 <TextInput
-                    placeholder="Busque por nome, número ou código..."
+                    placeholder="Busque por nome ou código..."
                     placeholderTextColor="#888"
                     style={styles.searchInput}
                     onChangeText={setSearchTerm}
                     value={searchTerm}
                 />
+
                 <FlatList
                     data={filteredModels}
                     keyExtractor={(item) => item.id}

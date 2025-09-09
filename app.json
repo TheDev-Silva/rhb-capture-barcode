@@ -4,11 +4,11 @@
     "slug": "rhb-capture-barcode",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/oficial.png",
+    "icon": "./assets/splash-icon2.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/ICON1.png",
+      "image": "./assets/splash-icon2.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
