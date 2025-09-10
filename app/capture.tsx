@@ -55,6 +55,8 @@ export default function CaptureScreen() {
       }
    }, [image]);
 
+
+
    const playScanSound = async () => {
       try {
          const { sound } = await Audio.Sound.createAsync(require("../assets/beep-07a.mp3"));
@@ -69,7 +71,7 @@ export default function CaptureScreen() {
 
    const pickImage = async () => {
       const result = await ImagePicker.launchCameraAsync({
-         mediaTypes: ImagePicker.MediaTypeOptions.Images,
+         mediaTypes: 'images',
          allowsEditing: true,
          aspect: [4, 3],
          quality: 0.7,
@@ -98,13 +100,47 @@ export default function CaptureScreen() {
    };
 
    const handleBarCodeScanned = ({ data }: { data: string }) => {
+      // junta todos os códigos já registrados nos blocos anteriores
+      const allCodes = codeBlocks.flatMap(block => block.codes);
+
+      // verifica se já existe em algum bloco
+      if (allCodes.includes(data)) {
+         // encontra a data de quando foi salvo
+         const foundBlock = codeBlocks.find(block => block.codes.includes(data));
+         const dataCaptura = foundBlock
+            ? new Date(foundBlock.timestamp).toLocaleDateString()
+            : "data desconhecida";
+
+         Alert.alert(
+            "Código já capturado",
+            `O código ${data} já foi capturado no dia ${dataCaptura}. Deseja continuar ou ver histórico?`,
+            [
+               {
+                  text: "Ver Histórico",
+                  onPress: () => router.push("/history"),
+                  style: "default",
+               },
+               {
+                  text: "Continuar",
+                  onPress: () => {
+                     setScannedCodes(prev => [...prev, data]);
+                     playScanSound();
+                  },
+               },
+               { text: "Cancelar", style: "cancel" },
+            ]
+         );
+
+         return; // evita adicionar automático
+      }
+
+      // caso não tenha sido capturado ainda
       if (!scannedCodes.includes(data)) {
-         setScannedCodes((prev) => [...prev, data]);
+         setScannedCodes(prev => [...prev, data]);
          playScanSound();
-      } else {
-         console.log("Código já escaneado!");
       }
    };
+
 
    const finalizarBloco = () => {
       if (scannedCodes.length > 0) {
@@ -210,6 +246,8 @@ export default function CaptureScreen() {
                   style={StyleSheet.absoluteFillObject}
                   barcodeScannerSettings={{ barcodeTypes: ["ean13", "ean8", "code128"] }}
                   onBarcodeScanned={handleBarCodeScanned}
+                  animateShutter={true}
+                  autofocus="on"
                />
 
                <ScrollView style={styles.overlayCodes}>

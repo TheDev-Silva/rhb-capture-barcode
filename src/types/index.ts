@@ -13,7 +13,7 @@ export interface Pedido {
   criadoEm: string;
   allCodes: string[]
 }
-export interface Modelos {
+export interface Modelo {
   id: string;
   name: string;
   imageUri: number;

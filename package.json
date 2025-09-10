@@ -25,7 +25,8 @@
     "react-native-image-zoom-viewer": "^3.0.1",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "expo-audio": "~0.4.9"
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",

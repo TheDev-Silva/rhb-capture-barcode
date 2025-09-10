@@ -2,12 +2,12 @@ import React, { useMemo, useState } from "react";
 import { Text, View, StyleSheet, TextInput, Image, TouchableOpacity, FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ImageModal from '../src/models/imageModal'; // Importe o componente que criamos
-import { Pedido } from "../src/types";
+import { Modelo, Pedido } from "../src/types";
 import { useAppContext } from "../src/context/AppContext";
 
 
 // Dados de exemplo para simular modelos (substitua com seus próprios dados)
-const MODELOS_MOCK = [
+const MODELOS_MOCK: Modelo[] = [
     {
         id: '1',
         name: 'Impressora Multifuncional Mono Pantum Bm5100fdw Laser 127v',
@@ -43,6 +43,12 @@ const MODELOS_MOCK = [
         name: 'Impressora A Laser Ethernet Pantum Bp5100dw', // Novo item para demonstrar a funcionalidade
         imageUri: require('../assets/modelos/Captura de tela 2025-09-04 235258.png'),
         codeInit: ['CBVV00']
+    },
+    {
+        id: '7',
+        name: 'Impressora de Testes', // Novo item para demonstrar a funcionalidade
+        imageUri: require('../assets/modelos/Captura de tela 2025-09-04 235258.png'),
+        codeInit: ['896']
     }
 ];
 
@@ -81,19 +87,10 @@ export default function Modelos() {
         setSelectedImageUri(null);
     };
 
-    const filteredModels = MODELOS_MOCK.filter(modelo => {
-        const termo = searchTerm.toLowerCase();
-    
-        // busca pelo nome
-        const matchName = modelo.name.toLowerCase().includes(termo);
-    
-        // busca pelos prefixos de código (array de strings)
-        const matchCode = modelo.codeInit?.some(prefix =>
-            prefix.toLowerCase().startsWith(termo)
-        );
-    
-        return matchName || matchCode;
-    });
+    const filteredModels = MODELOS_MOCK.filter(model =>
+        model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        model.codeInit.some(prefix => prefix.toLowerCase().startsWith(searchTerm.toLowerCase()))
+    );
 
     const renderItem = ({ item }: any) => {
         const codigosDoModelo = getCodigosDoModelo(item, allCodes);
@@ -102,9 +99,9 @@ export default function Modelos() {
             <View style={styles.modelCard}>
                 <View style={{ flex: 1, gap: 8 }}>
                     <Text style={styles.modelName}>{item.name}</Text>
-                    <Text style={{ fontSize: 12, color: "#666" }}>
-                        Prefixos: {item.codeInit.join(", ")}
-                    </Text>
+                    {item.codeInit.map((prefix: any, idx: any) => (
+                        <Text key={`${item.id}-${idx}`}> {prefix} ...</Text>
+                    ))}
 
                     {codigosDoModelo.length > 0 ? (
                         <View style={{ marginTop: 5 }}>

@@ -100,6 +100,10 @@ export default function SearchScreen() {
                      {selectedItem && (
 
                         <View>
+                           <View style={[styles.autor, { borderBottomWidth: 1, borderColor: '#e5e5e5', paddingVertical: 10 }]}>
+                              <Text style={{ fontSize: 18, fontWeight: '500' }}>Em</Text>
+                              <Text style={{ fontSize: 18, fontWeight: '500', color: '#8c8c8c' }}>{new Date(selectedItem.criadoEm).toLocaleString()}</Text>
+                           </View>
                            <View style={[styles.autor, { borderBottomWidth: 1, borderColor: '#e5e5e5', paddingVertical: 10, }]}>
                               <Text style={{ fontSize: 18, fontWeight: '500' }}>Código</Text>
                               <Text style={{ fontSize: 18, fontWeight: '500', color: '#8c8c8c' }}>{selectedItem.code}</Text>
@@ -110,10 +114,6 @@ export default function SearchScreen() {
                               <Text style={{ fontSize: 18, fontWeight: '500', color: '#8c8c8c' }}>{selectedItem.numero}</Text>
                            </View>
 
-                           <View style={[styles.autor, { borderBottomWidth: 1, borderColor: '#e5e5e5', paddingVertical: 10 }]}>
-                              <Text style={{ fontSize: 18, fontWeight: '500' }}>Criado em</Text>
-                              <Text style={{ fontSize: 18, fontWeight: '500', color: '#8c8c8c' }}>{new Date(selectedItem.criadoEm).toLocaleString()}</Text>
-                           </View>
 
 
 

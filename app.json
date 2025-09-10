@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/splash-icon2.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0036a0"
     },
     "ios": {
       "supportsTablet": true
@@ -46,7 +46,8 @@
         {
           "photosPermission": "The app accesses your photos to let you share them with your friends."
         }
-      ]
+      ],
+      "expo-audio"
     ]
   }
 }
